@@ -247,7 +247,7 @@ function makeFood() {
 }
 
 Crafty.scene("loading", function() {
-    Crafty.load(['boy.png'], function() {
+    Crafty.load(['man.png'], function() {
         Crafty.scene('main');
     });
 
