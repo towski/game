@@ -3,33 +3,6 @@
 //setup the Crafty game with an FPS of 50 and stage width
 //and height
 
-function Player(){  
-  this.esteem = 50;
-  this.lines;
-}
-
-function Line(string, qualities){
-  this.line = string;
-  this.qualities = qualities;
-}
-
-function Girl(e){
-  this.esteem = e;
-  function acceptLine(line){
-    
-  } 
-}
-
-var player = new Player([
-  new Line("Hi", {esteem: 1, interest: 1, confidence: 1}), 
-  new Line("You're ugly", {esteem: -1, interest: 1, confidence: 3}), 
-  new Line("...", {esteem: 0, interest: 0, confidence: 0})]);
-  
-var girl = new Girl([
-  new Line("Hi", {esteem: 1, interest: 1, confidence: 1}), 
-  new Line("You're ugly", {esteem: -1, interest: 1, confidence: 3}), 
-  new Line("...", {esteem: -1, interest: 0, confidence: 0})]);
-
 Crafty.init(50, 1000, 800);
 Crafty.canvas();
 
