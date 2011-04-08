@@ -2,6 +2,34 @@
 
 //setup the Crafty game with an FPS of 50 and stage width
 //and height
+
+function Player(){  
+  this.esteem = 50;
+  this.lines;
+}
+
+function Line(string, qualities){
+  this.line = string;
+  this.qualities = qualities;
+}
+
+function Girl(e){
+  this.esteem = e;
+  function acceptLine(line){
+    
+  } 
+}
+
+var player = new Player([
+  new Line("Hi", {esteem: 1, interest: 1, confidence: 1}), 
+  new Line("You're ugly", {esteem: -1, interest: 1, confidence: 3}), 
+  new Line("...", {esteem: 0, interest: 0, confidence: 0})]);
+  
+var girl = new Girl([
+  new Line("Hi", {esteem: 1, interest: 1, confidence: 1}), 
+  new Line("You're ugly", {esteem: -1, interest: 1, confidence: 3}), 
+  new Line("...", {esteem: -1, interest: 0, confidence: 0})]);
+
 Crafty.init(50, 1000, 800);
 Crafty.canvas();
 
@@ -15,49 +43,46 @@ Crafty.c('SpaceFlight', {
         });
     },
     accelerate: function(vec) {
-        this._vector.x += vec.x;
-        this._vector.y += vec.y;
+        this.x += vec.x;
+        this.y += vec.y;
     }
 });
 
-Crafty.c('thrusters', {
-    _accel: 0.01,
-    thrusters: function(accel) {
-        if (!this.has('SpaceFlight')) {
-            this.addComponent('SpaceFlight');
-        }
-        if (!this.has('controls')) {
-            this.addComponent('controls');
-        }
-
-        this._accel = accel || this._accel;
-        this._controls = { up: false, down: false, right: false, left: false };
-
-        this.bind('enterframe', function() {
-            var c = this._controls;
-
-            this.accelerate({
-                x: (c.left ? 0 - this._accel : 0) + (c.right ? this._accel : 0),
-                y: (c.up ? 0 - this._accel : 0) + (c.down ? this._accel : 0)
-            });
-        }).bind('keydown', function(e) {
-            if (e.keyCode == Crafty.keys.UA) { this._controls.up = true; }
-            if (e.keyCode == Crafty.keys.DA) { this._controls.down = true; }
-            if (e.keyCode == Crafty.keys.LA) { this._controls.left = true; }
-            if (e.keyCode == Crafty.keys.RA) { this._controls.right = true; }
-
-            this.preventTypeaheadFind(e);
-        }).bind('keyup', function(e) {
-            if (e.keyCode == Crafty.keys.UA) { this._controls.up = false; }
-            if (e.keyCode == Crafty.keys.DA) { this._controls.down = false; }
-            if (e.keyCode == Crafty.keys.LA) { this._controls.left = false; }
-            if (e.keyCode == Crafty.keys.RA) { this._controls.right = false; }
-
-            this.preventTypeaheadFind(e);
-        });
-
-        return this;
+Crafty.c('CustomControls', {
+  __move: {left: false, right: false, up: false, down: false},
+  _speed: 3,
+  CustomControls: function(speed) {
+    if (!this.has('controls')) {
+        this.addComponent('controls');
     }
+    if (speed) this._speed = speed;
+    var move = this.__move;
+    this.bind('enterframe', function() {
+      // Move the player in a direction depending on the booleans
+      // Only move the player in one direction at a time (up/down/left/right)
+      if (move.right) this.x += this._speed;
+      else if (move.left) this.x -= this._speed;
+      else if (move.up) this.y -= this._speed;
+      else if (move.down) this.y += this._speed;
+    }).bind('keydown', function(e) {
+      // Default movement booleans to false
+      move.right = move.left = move.down = move.up = false;
+      // If keys are down, set the direction
+      if (e.keyCode === Crafty.keys.RA) move.right = true;
+      if (e.keyCode === Crafty.keys.LA) move.left = true;
+      if (e.keyCode === Crafty.keys.UA) move.up = true;
+      if (e.keyCode === Crafty.keys.DA) move.down = true;
+      this.preventTypeaheadFind(e);
+    }).bind('keyup', function(e) {
+      // If key is released, stop moving
+      if (e.keyCode === Crafty.keys.RA) move.right = false;
+      if (e.keyCode === Crafty.keys.LA) move.left = false;
+      if (e.keyCode === Crafty.keys.UA) move.up = false;
+      if (e.keyCode === Crafty.keys.DA) move.down = false;
+      this.preventTypeaheadFind(e);
+    });
+    return this;
+  }
 });
 
 Crafty.c('Losable', {
@@ -134,23 +159,75 @@ Crafty.c('massive', {
     }
 });
 
-Crafty.sprite(25, 'ship.gif', {
-    ship: [0,0]
+Crafty.sprite(32, 'man.png', {
+    man: [0,0,0,2],
+    back: [0,6,0,2]
+});
+
+Crafty.sprite(32, 'girl.png', {
+    girl: [0,0,0,2]
 });
 
 function makeGuy() {
-    var guy = Crafty.e('2D, canvas, guy, ship, collision, thrusters, Losable')
-        .attr({ x: Crafty.viewport.width / 2, y: Crafty.viewport.height / 2, w: 25, h: 25 })
-        .thrusters(0.01);
+    var guy = Crafty.e('2D, canvas, guy, man, collision, CustomControls, animate, Losable')
+        .attr({ x: Crafty.viewport.width / 2, y: Crafty.viewport.height / 2, w: 25, h: 50 })
+        .animate("walk_down",  0, 0, 3)
+        .animate("walk_left",  0, 2, 3)
+        .animate("walk_right", 0, 4, 3)
+        .animate("walk_up",    0, 6, 3)
+        .CustomControls(3)
+        .bind("enterframe", function(e) {
+          if (this.__move.left) {
+            if (!this.isPlaying("walk_left"))
+              this.stop().animate("walk_left", 10);
+          }
+          if (this.__move.right) {
+            if (!this.isPlaying("walk_right"))
+              this.stop().animate("walk_right", 10);
+          }
+          if (this.__move.up) {
+            if (!this.isPlaying("walk_up"))
+              this.stop().animate("walk_up", 10);
+          }
+          if (this.__move.down) {
+            if (!this.isPlaying("walk_down"))
+              this.stop().animate("walk_down", 10);
+          }
+        }).bind("keyup", function(e) {
+          this.stop();
+        }).collision()
+        .onhit("girl", function(){
+          Crafty.scene('gameover');
+          makeLargeGirl();
+          makeLargeGuy();
+          new Crafty.polygon([10,10],[50,50],[10,100],[50,100]);
+        });
     return guy;
 }
 
+function makeGirl() {
+  var girl = Crafty.e('2D, canvas, girl, collision')
+      .attr({ x: (Crafty.viewport.width / 2) + 100, y: (Crafty.viewport.height / 2) + 100, w: 25, h: 50 })
+  return girl;
+}
+
 function makeRock() {
-    var rock = Crafty.e('2D, canvas, color, rock, collision, Deadly, massive')
-        .attr({ x: Crafty.viewport.width / 4, y: Crafty.viewport.height / 4, w: 50, h: 50 })
-        .color('#fff')
-        .mass(100);
+    var rock = Crafty.e('2D, canvas, color, rock, collision, Deadly')
+        .attr({ x: 30, y: 30, w: 200, h: 30 })
+        .color('#123');
     return rock;
+}
+
+function makeLargeGirl() {
+  var girl = Crafty.e('2D, canvas, girl, collision')
+      .attr({ x: (Crafty.viewport.width / 2), y: 100, w: 100, h: 200 })
+  return girl;
+}
+
+function makeLargeGuy() {
+  var boy = Crafty.e('2D, canvas, back, collision')
+      .attr({ x: (Crafty.viewport.width / 2) - 100, y: (Crafty.viewport.height - 400), w: 150, h: 300 })
+  return boy;
 }
 
 function makeFood() {
@@ -170,24 +247,24 @@ function makeFood() {
 }
 
 Crafty.scene("loading", function() {
-    Crafty.load(['ship.gif'], function() {
+    Crafty.load(['boy.png'], function() {
         Crafty.scene('main');
     });
 
-    Crafty.background('#000');
+    Crafty.background('#fff');
     Crafty.e('2D, DOM, text').attr({w: 100, h: 20, x: 150, y: 120})
         .text('Loading...')
         .css({ 'text-align': 'center' });
 });
 
 Crafty.scene('gameover', function() {
-    Crafty.e('2D, DOM, text').attr({ w: 100, h: 20, x: 150, y: 120 })
-        .text('GAME OVER')
-        .css({ 'text-align': 'center' });
+    Crafty.e('2D, DOM, text').attr({ w: (Crafty.viewport.width / 2), h: (Crafty.viewport.height / 2), x: 150, y: 120 })
+        .css({ 'text-align': 'center', 'color': '#000' });
 });
 
 Crafty.scene('main', function() {
     makeGuy();
+    makeGirl();
     makeRock();
     makeFood();
 });
